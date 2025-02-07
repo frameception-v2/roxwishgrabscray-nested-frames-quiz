@@ -22,17 +22,39 @@ import { createStore } from "mipd";
 import { Label } from "~/components/ui/label";
 import { PROJECT_TITLE } from "~/lib/constants";
 
-function ExampleCard() {
+function QuizCard({ question, options, explanation, isCorrect, onAnswer }: { 
+  question: string,
+  options: string[],
+  explanation: string,
+  isCorrect?: boolean,
+  onAnswer: (index: number) => void 
+}) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome to the Frame Template</CardTitle>
-        <CardDescription>
-          This is an example card that you can customize or remove
-        </CardDescription>
+        <CardTitle>{question}</CardTitle>
+        <CardDescription>Choose the correct answer:</CardDescription>
       </CardHeader>
-      <CardContent>
-        <Label>Place content in a Card here.</Label>
+      <CardContent className="flex flex-col gap-2">
+        {options.map((option, index) => (
+          <PurpleButton 
+            key={index}
+            onClick={() => onAnswer(index)}
+            disabled={typeof isCorrect !== 'undefined'}
+            className={typeof isCorrect !== 'undefined' 
+              ? index === isCorrect 
+                ? 'bg-green-500 hover:bg-green-600' 
+                : 'bg-red-500 hover:bg-red-600'
+              : ''}
+          >
+            {option}
+          </PurpleButton>
+        ))}
+        {typeof isCorrect !== 'undefined' && (
+          <div className="mt-4 p-2 bg-gray-100 rounded">
+            <Label>{explanation}</Label>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -41,6 +63,9 @@ function ExampleCard() {
 export default function Frame() {
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [context, setContext] = useState<Context.FrameContext>();
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
+  const [showResults, setShowResults] = useState(false);
 
   const [added, setAdded] = useState(false);
 
@@ -140,7 +165,53 @@ export default function Frame() {
         <h1 className="text-2xl font-bold text-center mb-4 text-gray-700 dark:text-gray-300">
           {PROJECT_TITLE}
         </h1>
-        <ExampleCard />
+        {!showResults ? (
+          <QuizCard
+            question={QUIZ_QUESTIONS[currentQuestionIndex].question}
+            options={QUIZ_QUESTIONS[currentQuestionIndex].options}
+            explanation={QUIZ_QUESTIONS[currentQuestionIndex].explanation}
+            isCorrect={
+              selectedAnswers[currentQuestionIndex] !== undefined
+                ? QUIZ_QUESTIONS[currentQuestionIndex].correct
+                : undefined
+            }
+            onAnswer={(answerIndex) => {
+              const newAnswers = [...selectedAnswers];
+              newAnswers[currentQuestionIndex] = answerIndex;
+              setSelectedAnswers(newAnswers);
+              
+              if (currentQuestionIndex < QUIZ_QUESTIONS.length - 1) {
+                setTimeout(() => {
+                  setCurrentQuestionIndex(prev => prev + 1);
+                }, 2000);
+              } else {
+                setTimeout(() => setShowResults(true), 2000);
+              }
+            }}
+          />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz Complete!</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Label>
+                Score: {selectedAnswers.filter((ans, i) => ans === QUIZ_QUESTIONS[i].correct).length}/
+                {QUIZ_QUESTIONS.length}
+              </Label>
+              <PurpleButton 
+                className="mt-4"
+                onClick={() => {
+                  setCurrentQuestionIndex(0);
+                  setSelectedAnswers([]);
+                  setShowResults(false);
+                }}
+              >
+                Restart Quiz
+              </PurpleButton>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
