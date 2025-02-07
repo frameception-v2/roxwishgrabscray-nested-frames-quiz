@@ -13,7 +13,7 @@ import {
   CardDescription,
   CardContent,
 } from "~/components/ui/card";
-
+import { PurpleButton } from "~/components/ui/PurpleButton";
 import { config } from "~/components/providers/WagmiProvider";
 import { truncateAddress } from "~/lib/truncateAddress";
 import { base, optimism } from "wagmi/chains";
